@@ -1,0 +1,161 @@
+:root {
+    --bg-color: #0b112c;
+    --card-bg: #16224f;
+    --accent-blue: #3a7bd5;
+    --neon-yellow: #f1c40f;
+    --neon-glow: #00d2ff;
+    --text-light: #ffffff;
+    --stamp-locked: #2c3a6b;
+}
+
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-light);
+    display: flex;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+.container {
+    width: 100%;
+    max-width: 480px;
+    padding: 20px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+header h1 {
+    font-size: 2.5rem;
+    letter-spacing: 4px;
+    margin-bottom: 5px;
+    text-shadow: 0 0 10px var(--neon-glow);
+}
+
+.subtitle {
+    font-size: 0.85rem;
+    color: #a0aed0;
+}
+
+.theme-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    background: linear-gradient(45deg, var(--accent-blue), #3a6073);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(0,210,255,0.5);
+}
+
+/* Video/Scanner Style */
+.video-container {
+    position: relative;
+    width: 100%;
+    height: 220px;
+    background-color: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--accent-blue);
+    margin-top: 20px;
+}
+
+#camera-stream {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.scan-overlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 70%;
+    height: 40px;
+    border: 2px dashed var(--neon-yellow);
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
+    pointer-events: none;
+}
+
+/* Buttons and Inputs */
+.btn-primary, .btn-success {
+    width: 100%;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 1rem;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: 0.3s;
+}
+
+.btn-primary { background-color: var(--accent-blue); color: white; }
+.btn-success { background-color: #2ecc71; color: white; }
+.btn-success:disabled { background-color: #7f8c8d; cursor: not-allowed; }
+
+.status-text {
+    margin-top: 10px;
+    font-size: 0.9rem;
+    color: var(--neon-yellow);
+}
+
+.ticket-input-fallback {
+    margin-top: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.ticket-input-fallback input {
+    background: var(--card-bg);
+    border: 1px solid var(--accent-blue);
+    padding: 8px;
+    color: white;
+    text-align: center;
+    border-radius: 6px;
+    font-size: 1.1rem;
+    width: 120px;
+}
+
+/* Stamp Dashboard Matrix */
+.stamp-section { margin-top: 30px; }
+
+.stamp-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-top: 15px;
+}
+
+.stamp-card {
+    background-color: var(--stamp-locked);
+    aspect-ratio: 1;
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border: 1px solid transparent;
+}
+
+.stamp-card span { font-size: 1.5rem; font-weight: bold; opacity: 0.4; }
+.stamp-card small { font-size: 0.6rem; opacity: 0.4; }
+
+/* Unlocked (Chop Applied) State mimicking a puzzle piece lock-in */
+.stamp-card.unlocked {
+    background: radial-gradient(circle, #f39c12, #d35400);
+    border-color: var(--neon-yellow);
+    box-shadow: 0 0 12px var(--neon-yellow);
+    transform: scale(1.05);
+}
+
+.stamp-card.unlocked span, .stamp-card.unlocked small {
+    opacity: 1;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}

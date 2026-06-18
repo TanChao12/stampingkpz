@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KPZ Inside Out - Digital Stamp System</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+    
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>INSIDE OUT</h1>
+            <p class="subtitle">Malam Persembahan Kelab Tiong Hua KPZ Ke-14</p>
+            <div class="theme-badge">DISCOVER YOUR TYPE</div>
+        </header>
+
+        <main class="scanner-section">
+            <h2>Ticket OCR Scanner</h2>
+            <div class="video-container">
+                <video id="camera-stream" autoplay playsinline></video>
+                <div class="scan-overlay"></div>
+            </div>
+            
+            <div class="controls">
+                <button id="btn-capture" class="btn-primary">📸 Scan Ticket Number</button>
+            </div>
+
+            <div id="ocr-status" class="status-text">Ready to scan...</div>
+            
+            <div class="ticket-input-fallback">
+                <label for="ticket-num">Active Ticket:</label>
+                <input type="text" id="ticket-num" placeholder="Scanned Number (e.g. 001)" readonly>
+            </div>
+        </main>
+
+        <section class="stamp-section">
+            <h2>Your MBTI Stamp Progress (<span id="stamp-count">0</span>/8)</h2>
+            <div class="stamp-grid">
+                <div class="stamp-card locked" data-mbti="E"><span>E</span><small>Extrovert</small></div>
+                <div class="stamp-card locked" data-mbti="I"><span>I</span><small>Introvert</small></div>
+                <div class="stamp-card locked" data-mbti="S"><span>S</span><small>Sensing</small></div>
+                <div class="stamp-card locked" data-mbti="N"><span>N</span><small>Intuition</small></div>
+                <div class="stamp-card locked" data-mbti="T"><span>T</span><small>Thinking</small></div>
+                <div class="stamp-card locked" data-mbti="F"><span>F</span><small>Feeling</small></div>
+                <div class="stamp-card locked" data-mbti="J"><span>J</span><small>Judging</small></div>
+                <div class="stamp-card locked" data-mbti="P"><span>P</span><small>Perceiving</small></div>
+            </div>
+            
+            <div class="operator-actions">
+                <button id="btn-add-stamp" class="btn-success" disabled>Award Current Stamp</button>
+            </div>
+        </section>
+    </div>
+
+    <canvas id="capture-canvas" style="display:none;"></canvas>
+
+    <script src="app.js"></script>
+</body>
+</html>
