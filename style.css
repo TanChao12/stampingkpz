@@ -220,3 +220,13 @@ select#station-select option {
     background: var(--bg-color);
     color: white;
 }
+.operator-badge {
+    display: inline-block;
+    padding: 5px 15px;
+    background: linear-gradient(45deg, #e74c3c, #c0392b);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    box-shadow: 0 0 8px rgba(231, 76, 60, 0.5);
+    text-transform: uppercase;
+}
