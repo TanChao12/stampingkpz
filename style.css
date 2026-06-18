@@ -159,3 +159,64 @@ header h1 {
     color: #fff;
     text-shadow: 0 1px 3px rgba(0,0,0,0.5);
 }
+
+/* New Dual Input Styles */
+.ticket-input-container {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+    justify-content: center;
+}
+
+.ticket-input-container input {
+    background: var(--card-bg);
+    border: 2px solid var(--accent-blue);
+    padding: 10px;
+    color: white;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    width: 50%;
+    font-weight: bold;
+}
+
+.ticket-input-container button {
+    margin-top: 0;
+    width: 40%;
+}
+
+/* Operator Panel Styles */
+.operator-panel {
+    background-color: rgba(22, 34, 79, 0.6);
+    padding: 15px;
+    border-radius: 10px;
+    margin-top: 20px;
+    border: 1px solid var(--accent-blue);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.operator-panel label {
+    font-size: 0.9rem;
+    color: var(--neon-yellow);
+    font-weight: bold;
+    text-align: left;
+}
+
+select#station-select {
+    width: 100%;
+    padding: 12px;
+    background: var(--bg-color);
+    color: white;
+    border: 1px solid var(--accent-blue);
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+select#station-select option {
+    background: var(--bg-color);
+    color: white;
+}
