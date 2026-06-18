@@ -29,18 +29,74 @@ const stampCountEl = document.getElementById("stamp-count");
 let currentTicketId = null;
 let currentTicketStamps = [];
 
-// Initialize device camera track stream
-if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(stream => { video.srcObject = stream; })
-        .catch(err => {
-            console.error(err);
-            ocrStatus.innerText = "Error: Camera track access blocked.";
+// --- ENHANCED CAMERA INITIALIZATION WITH FALLBACKS ---
+async function initCamera() {
+    ocrStatus.innerText = "Requesting camera hardware access...";
+    
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        ocrStatus.innerText = "Security Error: Open this page using HTTPS link on Safari/Chrome.";
+        enableManualFallback();
+        return;
+    }
+
+    // Attempt 1: Request the standard ultra-wide or wide rear camera
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+            video: { facingMode: "environment" } 
         });
+        video.srcObject = stream;
+        ocrStatus.innerText = "Rear camera active. Ready to scan!";
+    } catch (firstError) {
+        console.warn("Rear camera constraint failed, executing fallback standard capture...", firstError);
+        
+        // Attempt 2: Fallback to any generic available default hardware lens
+        try {
+            const fallbackStream = await navigator.mediaDevices.getUserMedia({ 
+                video: true 
+            });
+            video.srcObject = fallbackStream;
+            ocrStatus.innerText = "Default camera active. Ready to scan!";
+        } catch (finalError) {
+            console.error("All camera stream allocations failed:", finalError);
+            
+            // Print out clear human-readable error instructions directly to your phone screen
+            if (finalError.name === "NotAllowedError" || finalError.name === "PermissionDeniedError") {
+                ocrStatus.innerText = "⚠️ Camera Denied! Reset site permissions in your browser settings bar.";
+            } else {
+                ocrStatus.innerText = `Camera Error: ${finalError.message || finalError.name}`;
+            }
+            
+            enableManualFallback();
+        }
+    }
 }
+
+// Safety backup mechanism: Allows manual input if the hardware is blocked
+function enableManualFallback() {
+    ticketInput.removeAttribute("readonly");
+    ticketInput.placeholder = "Type # (e.g. 001)";
+    ticketInput.style.border = "2px solid #f1c40f";
+    ticketInput.style.background = "#1a2a5e";
+    
+    // Auto-fetch data when the operator types exactly 3 characters manually
+    ticketInput.addEventListener("input", (e) => {
+        const val = e.target.value.trim();
+        if (val.length >= 3) {
+            fetchTicketProgress(val);
+        }
+    });
+}
+
+// Execute camera handshake immediately on load
+initCamera();
 
 // OCR Processing Action
 btnCapture.addEventListener("click", async () => {
+    if (!video.srcObject) {
+        ocrStatus.innerText = "Scanner offline. Please type the ticket ID directly below.";
+        return;
+    }
+
     ocrStatus.innerText = "Analyzing live ticket frame...";
     const context = canvas.getContext("2d");
     canvas.width = video.videoWidth;
