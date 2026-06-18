@@ -6,7 +6,6 @@
     <title>KPZ Inside Out - Digital Stamp System</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
-    
 </head>
 <body>
 
@@ -18,26 +17,28 @@
         </header>
 
         <main class="scanner-section">
-            <h2>Ticket OCR Scanner</h2>
+            <h2>Ticket Entry & Scanner</h2>
+            
+            <!-- Dual Input: Always available text box -->
+            <div class="ticket-input-container">
+                <input type="text" id="ticket-num" placeholder="Type ID (e.g. 001)">
+                <button id="btn-load" class="btn-primary">Load Ticket</button>
+            </div>
+
             <div class="video-container">
                 <video id="camera-stream" autoplay playsinline muted></video>
                 <div class="scan-overlay"></div>
             </div>
             
             <div class="controls">
-                <button id="btn-capture" class="btn-primary">📸 Scan Ticket Number</button>
+                <button id="btn-capture" class="btn-primary">📸 Auto-Scan Ticket</button>
             </div>
 
-            <div id="ocr-status" class="status-text">Ready to scan...</div>
-            
-            <div class="ticket-input-fallback">
-                <label for="ticket-num">Active Ticket:</label>
-                <input type="text" id="ticket-num" placeholder="Scanned Number (e.g. 001)" readonly>
-            </div>
+            <div id="ocr-status" class="status-text">Ready to scan or type...</div>
         </main>
 
         <section class="stamp-section">
-            <h2>Your MBTI Stamp Progress (<span id="stamp-count">0</span>/8)</h2>
+            <h2>MBTI Progress (<span id="stamp-count">0</span>/8)</h2>
             <div class="stamp-grid">
                 <div class="stamp-card locked" data-mbti="E"><span>E</span><small>Extrovert</small></div>
                 <div class="stamp-card locked" data-mbti="I"><span>I</span><small>Introvert</small></div>
@@ -49,8 +50,20 @@
                 <div class="stamp-card locked" data-mbti="P"><span>P</span><small>Perceiving</small></div>
             </div>
             
-            <div class="operator-actions">
-                <button id="btn-add-stamp" class="btn-success" disabled>Award Current Stamp</button>
+            <!-- Operator Controls: Choose specific station stamp -->
+            <div class="operator-panel">
+                <label for="station-select">Booth Station Stamp:</label>
+                <select id="station-select">
+                    <option value="E">Award: E - Extrovert</option>
+                    <option value="I">Award: I - Introvert</option>
+                    <option value="S">Award: S - Sensing</option>
+                    <option value="N">Award: N - Intuition</option>
+                    <option value="T">Award: T - Thinking</option>
+                    <option value="F">Award: F - Feeling</option>
+                    <option value="J">Award: J - Judging</option>
+                    <option value="P">Award: P - Perceiving</option>
+                </select>
+                <button id="btn-add-stamp" class="btn-success" disabled>Apply Stamp to Ticket</button>
             </div>
         </section>
     </div>
