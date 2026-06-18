@@ -14,6 +14,20 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+// --- LIGHTWEIGHT OPERATOR TRACKING SYSTEM ---
+const urlParams = new URLSearchParams(window.location.search);
+const nameParam = urlParams.get('name');
+
+// If "?name=something" is in the link, save it and scrub the URL clean
+if (nameParam) {
+    localStorage.setItem('kpz_operator_name', nameParam.trim());
+    window.location.href = window.location.origin + window.location.pathname;
+}
+
+// Fallback to "Unknown Booth" if they just opened the base link directly
+const currentOperator = localStorage.getItem('kpz_operator_name') || "Unknown Booth";
+
+// DOM Selectors
 const video = document.getElementById("camera-stream");
 const canvas = document.getElementById("capture-canvas");
 const btnCapture = document.getElementById("btn-capture");
@@ -23,6 +37,13 @@ const ocrStatus = document.getElementById("ocr-status");
 const ticketInput = document.getElementById("ticket-num");
 const stampCountEl = document.getElementById("stamp-count");
 const stationSelect = document.getElementById("station-select");
+const operatorBadge = document.getElementById("operator-badge");
+
+// Render the active operator tracking badge on screen
+if (operatorBadge) {
+    operatorBadge.innerText = `👤 ${currentOperator}`;
+    operatorBadge.style.display = "inline-block";
+}
 
 let currentTicketId = null;
 let currentTicketStamps = [];
@@ -102,17 +123,18 @@ async function fetchTicketProgress(ticketId) {
             currentTicketStamps = docSnap.data().stamps || [];
         } else {
             currentTicketStamps = [];
-            await setDoc(docRef, { stamps: currentTicketStamps });
+            // Initialize document with empty arrays if it's a completely new ticket
+            await setDoc(docRef, { stamps: currentTicketStamps, logs: [] });
         }
         updateUIWithStamps();
         btnAddStamp.disabled = false;
-        ocrStatus.innerText = `Ticket #${ticketId} Loaded successfully.`;
+        ocrStatus.innerText = `Ticket #${ticketId} loaded successfully.`;
     } catch (e) {
         ocrStatus.innerText = "Network Error syncing with cloud.";
     }
 }
 
-// Update UI
+// Update UI Matrix
 function updateUIWithStamps() {
     const cards = document.querySelectorAll(".stamp-card");
     let count = 0;
@@ -130,30 +152,36 @@ function updateUIWithStamps() {
     stampCountEl.innerText = count;
 }
 
-// Apply Specific Station Stamp
+// Apply Specific Station Stamp with Audit Log Tracking
 btnAddStamp.addEventListener("click", async () => {
     if (!currentTicketId) return;
 
-    // Get the exact stamp selected from the dropdown
     const selectedStamp = stationSelect.value;
 
-    // Check if the user already has this specific stamp
     if (currentTicketStamps.includes(selectedStamp)) {
         ocrStatus.innerText = `⚠️ Ticket #${currentTicketId} already has the [${selectedStamp}] stamp!`;
         return;
     }
 
     const docRef = doc(db, "tickets", currentTicketId);
+    
+    // Package up the audit metadata
+    const logEntry = {
+        stamp: selectedStamp,
+        operator: currentOperator,
+        timestamp: new Date().toLocaleString("en-MY", { timeZone: "Asia/Kuala_Lumpur" }) // Local Malaysian Time
+    };
+
     try {
-        await updateDoc(docRef, { stamps: arrayUnion(selectedStamp) });
+        await updateDoc(docRef, { 
+            stamps: arrayUnion(selectedStamp),
+            logs: arrayUnion(logEntry) // Saves tracking log history into Firestore seamlessly
+        });
+
         currentTicketStamps.push(selectedStamp);
         updateUIWithStamps();
-        ocrStatus.innerText = `Success! Stamp [${selectedStamp}] added to Ticket #${currentTicketId}.`;
+        ocrStatus.innerText = `Success! Stamp [${selectedStamp}] applied by ${currentOperator}.`;
         
-        // Optional: clear input after successful scan for the next person
-        // ticketInput.value = "";
-        // currentTicketId = null;
-        // btnAddStamp.disabled = true;
     } catch (error) {
         ocrStatus.innerText = "Failed to apply stamp. Check internet connection.";
     }
