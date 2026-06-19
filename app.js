@@ -81,51 +81,70 @@ btnLoad.addEventListener("click", () => {
     }
 });
 
-// Auto-Scan Action
-// Auto-Scan Action (With Image Pre-Processing & Targeted Cropping)
+// Auto-Scan Action (Isolates Red Text in the Center Box)
 btnCapture.addEventListener("click", async () => {
     if (!video.srcObject) {
         ocrStatus.innerText = "Camera offline. Type ticket ID manually.";
         return;
     }
     
-    ocrStatus.innerText = "Processing high-contrast scan...";
+    ocrStatus.innerText = "Isolating red serial numbers...";
     const context = canvas.getContext("2d");
 
-    // 1. Calculate Target Cropping Coordinates (Region of Interest)
-    // We target a crisp, tight horizontal box right in the center of the video
-    const cropWidth = video.videoWidth * 0.70;   // Matches your 70% width overlay
-    const cropHeight = video.videoHeight * 0.25; // Targets a focused box height
+    // 1. Define the tight center box (Region of Interest)
+    const cropWidth = video.videoWidth * 0.70;   
+    const cropHeight = video.videoHeight * 0.20; // Lowered height to focus tightly on the sticker
     const cropX = (video.videoWidth - cropWidth) / 2;
     const cropY = (video.videoHeight - cropHeight) / 2;
 
-    // Set canvas dimensions strictly to the cropped box size
     canvas.width = cropWidth;
     canvas.height = cropHeight;
 
-    // 2. Apply Hardware-Accelerated Filters for Crisp Text Detection
-    // This turns red text black, brightens the white label, and sharpens edges
-    context.filter = 'grayscale(100%) contrast(250%) brightness(120%)';
-
-    // 3. Draw ONLY the optimized, cropped center box onto the canvas
+    // 2. Draw the raw camera crop into the canvas first
     context.drawImage(
         video, 
-        cropX, cropY, cropWidth, cropHeight, // Source coordinates from live video
-        0, 0, cropWidth, cropHeight          // Destination coordinates on canvas
+        cropX, cropY, cropWidth, cropHeight, 
+        0, 0, cropWidth, cropHeight          
     );
+
+    // 3. Pixel Manipulation: Filter out everything except RED
+    const imageData = context.getImageData(0, 0, cropWidth, cropHeight);
+    const data = imageData.data;
+
+    for (let i = 0; i < data.length; i += 4) {
+        const r = data[i];     // Red channel
+        const g = data[i + 1]; // Green channel
+        const b = data[i + 2]; // Blue channel
+
+        // Threshold Rule: True red has a strong R value, and is significantly higher than G and B
+        // We also want to avoid pure whites/yellows where G is high
+        if (r > 110 && r > g * 1.4 && r > b * 1.4) {
+            // It's the red number! Make it crisp black text for Tesseract
+            data[i] = 0;     // R
+            data[i + 1] = 0; // G
+            data[i + 2] = 0; // B
+        } else {
+            // It's background noise, barcode, or text. Erase it to pure white.
+            data[i] = 255;   // R
+            data[i + 1] = 255; // G
+            data[i + 2] = 255; // B
+        }
+    }
+    
+    // Write our red-isolated pixel data back to the canvas layout
+    context.putImageData(imageData, 0, 0);
     
     try {
-        // Use a less restrictive whitelist to handle potential raw artifacting
+        // Tesseract now only receives a clean image of black numbers on a white canvas
         const result = await Tesseract.recognize(
             canvas.toDataURL("image/jpeg"), 
             'eng',
-            { tessedit_char_whitelist: '0123456789No.Ticket:no ' }
+            { tessedit_char_whitelist: '0123456789' } // Safe to use numbers-only whitelist again!
         );
         
-        const detectedText = result.data.text.toLowerCase();
-        console.log("Processed Scan Box Text:", detectedText); 
+        const detectedText = result.data.text.replace(/\s+/g, ''); // Clear random spaces
+        console.log("Isolated Red Text Result:", detectedText); 
 
-        // Match any clean 3-digit cluster inside our isolated box
         const matches = detectedText.match(/\d{3}/);
         
         if (matches && matches[0]) {
@@ -134,7 +153,7 @@ btnCapture.addEventListener("click", async () => {
             ocrStatus.innerText = `🎯 Ticket detected: #${ticketNum}`;
             fetchTicketProgress(ticketNum);
         } else {
-            ocrStatus.innerText = "Number unclear. Center the red digits in the box and retry.";
+            ocrStatus.innerText = "Number unclear. Ensure lighting is bright and red numbers are centered.";
         }
     } catch (error) {
         console.error(error);
