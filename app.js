@@ -82,50 +82,63 @@ btnLoad.addEventListener("click", () => {
 });
 
 // Auto-Scan Action
+// Auto-Scan Action (With Image Pre-Processing & Targeted Cropping)
 btnCapture.addEventListener("click", async () => {
     if (!video.srcObject) {
         ocrStatus.innerText = "Camera offline. Type ticket ID manually.";
         return;
     }
-    ocrStatus.innerText = "Analyzing live frame...";
+    
+    ocrStatus.innerText = "Processing high-contrast scan...";
     const context = canvas.getContext("2d");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    // 1. Calculate Target Cropping Coordinates (Region of Interest)
+    // We target a crisp, tight horizontal box right in the center of the video
+    const cropWidth = video.videoWidth * 0.70;   // Matches your 70% width overlay
+    const cropHeight = video.videoHeight * 0.25; // Targets a focused box height
+    const cropX = (video.videoWidth - cropWidth) / 2;
+    const cropY = (video.videoHeight - cropHeight) / 2;
+
+    // Set canvas dimensions strictly to the cropped box size
+    canvas.width = cropWidth;
+    canvas.height = cropHeight;
+
+    // 2. Apply Hardware-Accelerated Filters for Crisp Text Detection
+    // This turns red text black, brightens the white label, and sharpens edges
+    context.filter = 'grayscale(100%) contrast(250%) brightness(120%)';
+
+    // 3. Draw ONLY the optimized, cropped center box onto the canvas
+    context.drawImage(
+        video, 
+        cropX, cropY, cropWidth, cropHeight, // Source coordinates from live video
+        0, 0, cropWidth, cropHeight          // Destination coordinates on canvas
+    );
     
     try {
-        // 1. REMOVE the whitelist so Tesseract can actually read the words "No. Ticket"
+        // Use a less restrictive whitelist to handle potential raw artifacting
         const result = await Tesseract.recognize(
-            canvas.toDataURL("image/jpeg"), 'eng'
+            canvas.toDataURL("image/jpeg"), 
+            'eng',
+            { tessedit_char_whitelist: '0123456789No.Ticket:no ' }
         );
         
-        // Convert to lowercase to ensure matching is completely foolproof
         const detectedText = result.data.text.toLowerCase();
-        console.log("Raw OCR Scan:", detectedText); // Useful for debugging in your mobile console
+        console.log("Processed Scan Box Text:", detectedText); 
+
+        // Match any clean 3-digit cluster inside our isolated box
+        const matches = detectedText.match(/\d{3}/);
         
-        // 2. Smart Regex: Look specifically for 3 digits immediately following "ticket" or "no"
-        const specificMatch = detectedText.match(/(?:ticket|no\.?)\s*:?\s*(\d{3})/);
-        
-        if (specificMatch && specificMatch[1]) {
-            const ticketNum = specificMatch[1];
+        if (matches && matches[0]) {
+            const ticketNum = matches[0];
             ticketInput.value = ticketNum;
-            ocrStatus.innerText = `Ticket detected: #${ticketNum}`;
+            ocrStatus.innerText = `🎯 Ticket detected: #${ticketNum}`;
             fetchTicketProgress(ticketNum);
         } else {
-            // Fallback: If anchor words failed but we found a random 3-digit number, pull it as a backup
-            const backupMatch = detectedText.match(/\d{3}/);
-            if (backupMatch) {
-                const ticketNum = backupMatch[0];
-                ticketInput.value = ticketNum;
-                ocrStatus.innerText = `Detected #${ticketNum} (Check if correct)`;
-                fetchTicketProgress(ticketNum);
-            } else {
-                ocrStatus.innerText = "Target unclear. Align ticket horizontally and try again.";
-            }
+            ocrStatus.innerText = "Number unclear. Center the red digits in the box and retry.";
         }
     } catch (error) {
         console.error(error);
-        ocrStatus.innerText = "OCR error. Type manually.";
+        ocrStatus.innerText = "OCR processing glitch. Type manually.";
     }
 });
 
