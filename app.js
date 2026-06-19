@@ -94,19 +94,37 @@ btnCapture.addEventListener("click", async () => {
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
     
     try {
+        // 1. REMOVE the whitelist so Tesseract can actually read the words "No. Ticket"
         const result = await Tesseract.recognize(
-            canvas.toDataURL("image/jpeg"), 'eng', { tessedit_char_whitelist: '0123456789' }
+            canvas.toDataURL("image/jpeg"), 'eng'
         );
-        const matches = result.data.text.match(/\d{3}/);
-        if (matches && matches[0]) {
-            const ticketNum = matches[0];
+        
+        // Convert to lowercase to ensure matching is completely foolproof
+        const detectedText = result.data.text.toLowerCase();
+        console.log("Raw OCR Scan:", detectedText); // Useful for debugging in your mobile console
+        
+        // 2. Smart Regex: Look specifically for 3 digits immediately following "ticket" or "no"
+        const specificMatch = detectedText.match(/(?:ticket|no\.?)\s*:?\s*(\d{3})/);
+        
+        if (specificMatch && specificMatch[1]) {
+            const ticketNum = specificMatch[1];
             ticketInput.value = ticketNum;
             ocrStatus.innerText = `Ticket detected: #${ticketNum}`;
             fetchTicketProgress(ticketNum);
         } else {
-            ocrStatus.innerText = "Text unclear. Snap again or type manually.";
+            // Fallback: If anchor words failed but we found a random 3-digit number, pull it as a backup
+            const backupMatch = detectedText.match(/\d{3}/);
+            if (backupMatch) {
+                const ticketNum = backupMatch[0];
+                ticketInput.value = ticketNum;
+                ocrStatus.innerText = `Detected #${ticketNum} (Check if correct)`;
+                fetchTicketProgress(ticketNum);
+            } else {
+                ocrStatus.innerText = "Target unclear. Align ticket horizontally and try again.";
+            }
         }
     } catch (error) {
+        console.error(error);
         ocrStatus.innerText = "OCR error. Type manually.";
     }
 });
